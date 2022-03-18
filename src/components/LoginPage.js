@@ -1,14 +1,38 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { LockClosedIcon } from '@heroicons/react/solid';
+import { useAuth } from '@hooks/useAuth';
+import { useRouter } from 'next/router';
 
 export default function LoginPage() {
+  const [errorLogin, setErrorLogin] = useState(null);
+  const [loading, setLoading] = useState(null);
+  const router = useRouter();
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
+  const auth = useAuth();
 
-  const submitHandler = (event) => {
+  const submitHanlder = (event) => {
     event.preventDefault();
     const email = emailRef.current.value;
     const password = passwordRef.current.value;
+    setErrorLogin(null);
+    setLoading(null);
+
+    auth
+      .signIn(email, password)
+      .then(() => {
+        router.push('/dashboard');
+      })
+      .catch(function (error) {
+        if (error.response?.status === 401) {
+          setErrorLogin('Usuario o password incorrecto');
+        } else if (error.request) {
+          setErrorLogin('Tenemos un problema');
+        } else {
+          setErrorLogin('Algo salio mal');
+        }
+        setLoading(false);
+      });
   };
 
   return (
@@ -19,7 +43,7 @@ export default function LoginPage() {
             <img className="mx-auto h-12 w-auto" src="https://tailwindui.com/img/logos/workflow-mark-indigo-600.svg" alt="Workflow" />
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
           </div>
-          <form className="mt-8 space-y-6" action="#" method="POST" onSubmit={submitHandler}>
+          <form className="mt-8 space-y-6" action="#" method="POST" onSubmit={submitHanlder}>
             <input type="hidden" name="remember" defaultValue="true" />
             <div className="rounded-md shadow-sm -space-y-px">
               <div>
@@ -68,9 +92,20 @@ export default function LoginPage() {
                 </a>
               </div>
             </div>
-
+            {errorLogin && (
+              <div className="p-3 mb-3 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
+                <span className="font-medium">Error!</span> {errorLogin}
+              </div>
+            )}
+            {loading && (
+              <span className="flex absolute h-4 w-4 top-0 right-0 -mt-1 -mr-1">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-300 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-indigo-400"></span>
+              </span>
+            )}
             <div>
               <button
+                disabled={loading}
                 type="submit"
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
